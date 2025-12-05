@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Basic meta -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>myprompt — Personal Prompt Library</title>
+  <meta name="description" content="myprompt — save, manage and share your best AI prompts. Copy, export, import, and use anywhere. Ultra-fast single-file prompt manager." />
+  <meta name="keywords" content="prompts, prompt manager, ai prompts, prompt library, share prompts" />
+  <meta name="author" content="myprompt" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="myprompt — Personal Prompt Library" />
+  <meta property="og:description" content="Save, manage and share your best AI prompts. Copy, export & import. Single-file app." />
+  <meta property="og:image" content="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&q=80&auto=format&fit=crop" />
+  <meta property="og:type" content="website" />
+
+  <!-- JSON-LD structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "myprompt",
+    "url": "https://example.com",
+    "description": "Save, manage and share your best AI prompts."
+  }
+  </script>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <!-- Lucide icons -->
+  <script src="https://unpkg.com/lucide/dist/lucide.min.js"></script>
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" integrity="" crossorigin="anonymous"></script>
+
+  <!-- Minimal CSS -->
+  <style>
+    /* ===========================
+       Variables & Basic Reset
+       =========================== */
+    :root{
+      --bg: #0f1720;
+      --card: rgba(255,255,255,0.05);
+      --glass: rgba(255,255,255,0.06);
+      --muted: #9aa4b2;
+      --accent: linear-gradient(135deg,#7c5cff,#00ffd1);
+      --glass-border: rgba(255,255,255,0.07);
+      --glass-2: rgba(255,255,255,0.03);
+      --text: #e6eef8;
+      --success: #2bd98b;
+      --danger: #ff6b6b;
+      --shadow: 0 6px 24px rgba(2,6,23,0.6);
+    }
+    [data-theme="light"]{
+      --bg: #f7fbff;
+      --card: rgba(255,255,255,0.68);
+      --glass: rgba(255,255,255,0.72);
+      --glass-2: rgba(0,0,0,0.04);
+      --glass-border: rgba(0,0,0,0.06);
+      --muted: #556178;
+      --text: #0b1220;
+      --shadow: 0 10px 30px rgba(15,23,42,0.06);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(124,92,255,0.07), transparent 8%),
+                  radial-gradient(800px 400px at 90% 90%, rgba(0,255,209,0.03), transparent 8%),
+                  var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:32px;
+      transition:background .3s ease, color .25s ease;
+    }
+
+    /* Container */
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns: 1fr 380px;
+      gap:28px;
+      align-items:start;
+    }
+
+    /* Responsive */
+    @media (max-width:1000px){
+      .wrap{grid-template-columns:1fr; padding-bottom:40px}
+    }
+
+    /* Card / Glass */
+    .card{
+      background: linear-gradient(180deg, var(--card), var(--glass-2));
+      border:1px solid var(--glass-border);
+      border-radius:14px;
+      padding:20px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px) saturate(120%);
+    }
+
+    header{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:18px;
+    }
+
+    .brand{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .logo{
+      width:52px;height:52px;border-radius:12px;
+      background:linear-gradient(135deg,#7c5cff,#00ffd1);
+      display:grid;place-items:center;color:white;font-weight:800;font-size:18px;
+      box-shadow: 0 8px 30px rgba(124,92,255,0.18);
+    }
+    .brand h1{font-size:18px;margin:0}
+    .brand p{margin:0;font-size:12px;color:var(--muted)}
+
+    /* Top Controls */
+    .controls{display:flex;gap:8px;align-items:center}
+    button.btn{
+      border:0;padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:600;
+      background:linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      color:var(--text);
+      border:1px solid var(--glass-border);
+    }
+    button.primary{
+      background:var(--accent);
+      color:#062026; padding:10px 14px; border-radius:12px;
+      box-shadow: 0 10px 30px rgba(124,92,255,0.14);
+    }
+    .icon{
+      width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:8px;
+    }
+
+    /* Left column content */
+    .hero{
+      display:flex;gap:18px;align-items:center;
+      padding:18px;border-radius:12px;overflow:hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    }
+    .hero-left{flex:1}
+    .hero h2{margin:0;font-size:26px;line-height:1.05}
+    .hero p{margin:8px 0;color:var(--muted)}
+    .hero .cta-row{display:flex;gap:10px;margin-top:12px}
+
+    .search-row{display:flex;gap:10px;margin-top:14px}
+    .search-row input{
+      flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--glass-border);
+      background:transparent;color:var(--text)
+    }
+
+    /* Prompt list */
+    .prompt-list{margin-top:16px;display:grid;gap:12px}
+    .prompt-item{
+      display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:10px;
+      border:1px solid transparent;
+      transition:transform .12s ease, box-shadow .12s ease;
+      background: linear-gradient(180deg, rgba(255,255,255,0.015), transparent);
+    }
+    .prompt-item:hover{transform:translateY(-4px); box-shadow: 0 8px 30px rgba(2,6,23,0.25)}
+    .prompt-meta{flex:1}
+    .prompt-meta h3{margin:0;font-size:15px}
+    .prompt-meta p{margin:6px 0;color:var(--muted);font-size:13px;white-space:pre-wrap}
+    .prompt-actions{display:flex;flex-direction:column;gap:8px;align-items:end}
+
+    .chip{
+      background:rgba(255,255,255,0.03);
+      border-radius:999px;padding:6px 8px;font-size:12px;color:var(--muted);
+      border:1px solid var(--glass-border)
+    }
+
+    /* Right column */
+    .right-col .card{position:sticky;top:28px}
+    .compose{display:flex;flex-direction:column;gap:8px}
+    textarea#promptInput{
+      width:100%;min-height:160px;padding:12px;border-radius:10px;border:1px solid var(--glass-border);
+      background:transparent;color:var(--text);resize:vertical;font-size:14px;
+    }
+    input[type="text"], input[type="search"]{
+      width:100%;padding:10px;border-radius:10px;border:1px solid var(--glass-border);
+      background:transparent;color:var(--text);
+    }
+    label{font-size:13px;color:var(--muted)}
+
+    .row{display:flex;gap:8px;align-items:center}
+    .row .flex{flex:1}
+
+    footer.site-footer{
+      margin-top:28px;padding:18px;border-radius:12px;text-align:center;color:var(--muted);
+      font-size:13px;
+    }
+
+    /* Tiny responsive fixes */
+    @media (max-width:600px){
+      .logo{width:44px;height:44px;font-size:16px}
+      header{gap:8px}
+      .controls{gap:6px}
+    }
+
+    /* subtle focus styles for accessibility */
+    button:focus, input:focus, textarea:focus{outline:3px solid rgba(124,92,255,0.12);outline-offset:2px}
+  </style>
+</head>
+<body>
+  <main class="wrap" id="app" role="main">
+    <!-- LEFT / MAIN COLUMN -->
+    <section>
+      <header class="card">
+        <div class="brand" aria-hidden="true">
+          <div class="logo" id="animLogo">MP</div>
+          <div>
+            <h1>myprompt</h1>
+            <p>Your personal prompt library — save, share & use anywhere</p>
+          </div>
+        </div>
+
+        <div class="controls" role="toolbar" aria-label="Top controls">
+          <button class="btn" id="importBtn" title="Import prompts (JSON)"><span class="icon" data-feather="download-cloud"></span> Import</button>
+          <button class="btn" id="exportBtn" title="Export prompts (JSON)"><span class="icon" data-feather="upload-cloud"></span> Export</button>
+          <button class="primary" id="newBtn" title="New prompt"><span class="icon" data-feather="plus-circle"></span> New Prompt</button>
+          <button class="btn" id="themeToggle" aria-pressed="false" title="Toggle dark/light"><span class="icon" data-feather="sun"></span></button>
+        </div>
+      </header>
+
+      <!-- HERO -->
+      <section class="card hero" aria-labelledby="hero-title">
+        <div class="hero-left">
+          <h2 id="hero-title">Save your best prompts. Use them everywhere.</h2>
+          <p>Quickly store prompts, tag them, copy to clipboard or create share links to use remotely — perfect for remote work, client demos, or keeping your secret prompt recipes.</p>
+
+          <div class="cta-row" role="group" aria-label="Quick actions">
+            <button class="primary" id="quickCompose"><span class="icon" data-feather="edit-2"></span> Compose Prompt</button>
+            <button class="btn" id="openLibrary"><span class="icon" data-feather="book"></span> Open Library</button>
+          </div>
+
+          <div class="search-row" style="margin-top:16px">
+            <input type="search" id="search" aria-label="Search prompts" placeholder="Search prompts, tags or content..." />
+            <button class="btn" id="clearSearch" title="Clear search" aria-hidden="true"><span class="icon" data-feather="x"></span></button>
+          </div>
+
+          <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
+            <span class="chip" id="countChip">0 prompts</span>
+            <span class="chip" id="tagFilterChip" style="display:none">filtered</span>
+          </div>
+        </div>
+
+        <div style="width:240px">
+          <img alt="Creative workspace" src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=60&auto=format&fit=crop" style="width:100%;border-radius:10px;display:block" />
+        </div>
+      </section>
+
+      <!-- PROMPT LIST -->
+      <div class="card" style="margin-top:16px">
+        <h3 style="margin-top:0">Prompt Library</h3>
+        <p style="margin:0 0 12px 0;color:var(--muted)">Your saved prompts appear below. Click "Use" to copy / fill, or "Share" to create a remote link.</p>
+
+        <div id="promptList" class="prompt-list" aria-live="polite" aria-atomic="true">
+          <!-- JS injects prompt items -->
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="downloadAll">Download all (.json)</button>
+          <button class="btn" id="clearAll">Clear all (local)</button>
+          <div style="margin-left:auto;color:var(--muted);font-size:13px">Local storage used: <span id="storageUsage">—</span></div>
+        </div>
+      </div>
+
+      <!-- Testimonials / About / Services -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+        <div class="card" aria-labelledby="about-title">
+          <h4 id="about-title">About myprompt</h4>
+          <p style="color:var(--muted)">myprompt helps you keep a portable, searchable prompt collection. Use share links to access prompts from any remote location — ideal for prompt engineers, AI consultants and creators.</p>
+          <ul style="margin:8px 0 0 18px;color:var(--muted)">
+            <li>Offline-first (localStorage)</li>
+            <li>Share via URL (encoded)</li>
+            <li>Import / Export JSON backup</li>
+          </ul>
+        </div>
+
+        <div class="card" aria-labelledby="services-title">
+          <h4 id="services-title">Services</h4>
+          <p style="color:var(--muted)">You can extend this file to connect with Firebase or your own API for synced remote storage — see the optional backend section below.</p>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <span class="chip">Prompt editing</span>
+            <span class="chip">Export & Backup</span>
+            <span class="chip">Share links</span>
+            <span class="chip">Search & Tag</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer small -->
+      <footer class="site-footer">
+        Built with ❤️ by myprompt — single-file prompt manager • <a href="mailto:hello@example.com" style="color:inherit">Contact</a>
+      </footer>
+    </section>
+
+    <!-- RIGHT / SIDEBAR -->
+    <aside class="right-col">
+      <div class="card">
+        <h3 style="margin-top:0">Compose / Use Prompt</h3>
+        <div class="compose" role="form" aria-label="Compose prompt">
+          <label for="titleInput">Prompt title</label>
+          <input id="titleInput" type="text" placeholder="Quick product description prompt" />
+
+          <label for="tagsInput">Tags (comma separated)</label>
+          <input id="tagsInput" type="text" placeholder="marketing, product, blog" />
+
+          <label for="promptInput">Prompt</label>
+          <textarea id="promptInput" placeholder="Write or paste your prompt here..."></textarea>
+
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="primary" id="savePrompt"><span class="icon" data-feather="save"></span> Save Prompt</button>
+            <button class="btn" id="copyPrompt"><span class="icon" data-feather="copy"></span> Copy</button>
+            <button class="btn" id="sharePrompt"><span class="icon" data-feather="share-2"></span> Share</button>
+          </div>
+
+          <hr style="border:none;border-top:1px dashed var(--glass-border);margin:8px 0" />
+
+          <label for="useArea">Use / Remote Use</label>
+          <textarea id="useArea" aria-label="Use prompt area" placeholder="Select a prompt and click Use to fill here..."></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn" id="runCopy"><span class="icon" data-feather="clipboard"></span> Copy to clipboard</button>
+            <button class="btn" id="openShareURL" title="Open share link if present">Open share link</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h4 style="margin:0 0 8px 0">Quick Tips</h4>
+        <ol style="color:var(--muted);margin:0 0 0 18px;padding:0">
+          <li>Use tags to organize prompts.</li>
+          <li>Share links encode prompt in the URL — perfect for remote use.</li>
+          <li>Export JSON as backup or to import into other devices.</li>
+        </ol>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h4 style="margin:0 0 8px 0">Testimonials</h4>
+        <blockquote style="margin:0;color:var(--muted)">“I carry my prompt library with me — love the share links.” — AI Consultant</blockquote>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Hidden file input for import -->
+  <input type="file" id="fileInput" accept="application/json,text/json,text/plain" style="display:none" />
+
+  <!-- JS -->
+  <script>
+    /*************************************************************************
+     * myprompt - Single-file prompt manager
+     * Author: myprompt (you)
+     * Comments: Everything below is self-contained. No backend required.
+     *************************************************************************/
+
+    // ---- Utilities ----
+    const qs = sel => document.querySelector(sel);
+    const qsa = sel => Array.from(document.querySelectorAll(sel));
+    const uid = () => 'p-' + Math.random().toString(36).slice(2,10);
+
+    // DOM elements
+    const promptList = qs('#promptList');
+    const countChip = qs('#countChip');
+    const storageUsage = qs('#storageUsage');
+    const titleInput = qs('#titleInput');
+    const tagsInput = qs('#tagsInput');
+    const promptInput = qs('#promptInput');
+    const savePromptBtn = qs('#savePrompt');
+    const copyPromptBtn = qs('#copyPrompt');
+    const sharePromptBtn = qs('#sharePrompt');
+    const useArea = qs('#useArea');
+    const runCopyBtn = qs('#runCopy');
+    const openShareURLBtn = qs('#openShareURL');
+    const searchInput = qs('#search');
+    const clearSearchBtn = qs('#clearSearch');
+    const downloadAllBtn = qs('#downloadAll');
+    const clearAllBtn = qs('#clearAll');
+    const importBtn = qs('#importBtn');
+    const exportBtn = qs('#exportBtn');
+    const fileInput = qs('#fileInput');
+    const themeToggle = qs('#themeToggle');
+    const animLogo = qs('#animLogo');
+    const newBtn = qs('#newBtn');
+    const quickCompose = qs('#quickCompose');
+    const openLibrary = qs('#openLibrary');
+
+    // Storage key
+    const STORAGE_KEY = 'myprompt.v1';
+
+    // Initialize theme from system or storage
+    const initTheme = () => {
+      const saved = localStorage.getItem('myprompt.theme');
+      if(saved){
+        document.documentElement.setAttribute('data-theme', saved);
+        themeToggle.setAttribute('aria-pressed', saved === 'light');
+        updateThemeIcon(saved);
+      } else {
+        const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        const theme = prefersLight ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        updateThemeIcon(theme);
+      }
+    };
+    const updateThemeIcon = (theme) => {
+      const icon = theme === 'light' ? 'moon' : 'sun';
+      themeToggle.innerHTML = '<span class="icon" data-feather="'+icon+'"></span>';
+      if(window.lucide) lucide.replace();
+    };
+
+    // Data model: { id, title, prompt, tags:[], createdAt, favorite:boolean }
+    const loadPrompts = () => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch(e){
+        console.error('Failed to parse storage', e);
+        return [];
+      }
+    };
+    const savePrompts = (arr) => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+      updateStorageUsage();
+    };
+    const updateStorageUsage = () => {
+      const used = JSON.stringify(localStorage).length;
+      storageUsage.textContent = Math.round(used/1024) + ' KB';
+    };
+
+    // Render prompt list
+    function renderList(filter=''){
+      const all = loadPrompts();
+      const q = filter.trim().toLowerCase();
+      let filtered = all;
+      if(q){
+        filtered = all.filter(p => {
+          const inTags = (p.tags || []).join(' ').toLowerCase();
+          return (p.title && p.title.toLowerCase().includes(q)) ||
+                 (p.prompt && p.prompt.toLowerCase().includes(q)) ||
+                 inTags.includes(q);
+        });
+        qs('#tagFilterChip').style.display = 'inline-block';
+      } else {
+        qs('#tagFilterChip').style.display = 'none';
+      }
+
+      promptList.innerHTML = '';
+      if(filtered.length === 0){
+        promptList.innerHTML = '<div style="color:var(--muted)">No prompts yet — create one on the right or import.</div>';
+      } else {
+        filtered.sort((a,b)=> b.createdAt - a.createdAt);
+        filtered.forEach(p => {
+          const el = document.createElement('div');
+          el.className = 'prompt-item';
+          el.innerHTML = `
+            <div class="prompt-meta">
+              <h3>${escapeHtml(p.title || 'Untitled prompt')}</h3>
+              <p>${escapeHtml(shorten(p.prompt, 300))}</p>
+              <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+                ${(p.tags || []).slice(0,4).map(t=>`<span class="chip" title="tag">${escapeHtml(t)}</span>`).join('')}
+                <span style="margin-left:auto;color:var(--muted);font-size:12px">${new Date(p.createdAt).toLocaleString()}</span>
+              </div>
+            </div>
+            <div class="prompt-actions">
+              <button class="btn" data-action="use" data-id="${p.id}"><span class="icon" data-feather="play"></span> Use</button>
+              <button class="btn" data-action="edit" data-id="${p.id}"><span class="icon" data-feather="edit"></span> Edit</button>
+              <button class="btn" data-action="share" data-id="${p.id}"><span class="icon" data-feather="link-2"></span> Share</button>
+              <button class="btn" data-action="del" title="Delete" data-id="${p.id}"><span class="icon" data-feather="trash-2"></span></button>
+            </div>
+          `;
+          promptList.appendChild(el);
+        });
+      }
+
+      // re-render icons
+      if(window.lucide) lucide.replace();
+
+      // attach actions
+      qsa('[data-action]').forEach(btn=>{
+        btn.addEventListener('click', (ev)=>{
+          const action = btn.getAttribute('data-action');
+          const id = btn.getAttribute('data-id');
+          if(action === 'use') usePrompt(id);
+          if(action === 'edit') editPrompt(id);
+          if(action === 'share') sharePromptById(id);
+          if(action === 'del') deletePrompt(id);
+        })
+      });
+
+      countChip.textContent = `${all.length} prompt${all.length!==1?'s':''}`;
+    }
+
+    // Helper: shorten text
+    function shorten(s, len=200){
+      if(!s) return '';
+      return s.length > len ? s.slice(0,len) + '…' : s;
+    }
+
+    // Escape for HTML output
+    function escapeHtml(str=''){
+      return String(str)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&#39;');
+    }
+
+    // Save new / update prompt
+    savePromptBtn.addEventListener('click', ()=>{
+      const title = titleInput.value.trim();
+      const tags = (tagsInput.value || '').split(',').map(s=>s.trim()).filter(Boolean);
+      const prompt = promptInput.value.trim();
+      if(!prompt){
+        alert('Please enter a prompt before saving.');
+        return;
+      }
+      const prompts = loadPrompts();
+      // if editing (we store id in save button dataset)
+      if(savePromptBtn.dataset.editing){
+        const id = savePromptBtn.dataset.editing;
+        const idx = prompts.findIndex(p=>p.id===id);
+        if(idx>=0){
+          prompts[idx].title = title;
+          prompts[idx].tags = tags;
+          prompts[idx].prompt = prompt;
+          prompts[idx].updatedAt = Date.now();
+        }
+        delete savePromptBtn.dataset.editing;
+        savePromptBtn.textContent = ' Save Prompt';
+      } else {
+        prompts.push({
+          id: uid(),
+          title: title || (prompt.split('\n')[0].slice(0,40)),
+          prompt,
+          tags,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
+      }
+      savePrompts(prompts);
+      clearForm();
+      renderList(searchInput.value);
+    });
+
+    // Clear form
+    function clearForm(){
+      titleInput.value = '';
+      tagsInput.value = '';
+      promptInput.value = '';
+      delete savePromptBtn.dataset.editing;
+    }
+
+    // Use prompt: fill useArea and copy optionally
+    function usePrompt(id){
+      const prompts = loadPrompts();
+      const p = prompts.find(x=>x.id===id);
+      if(!p) return;
+      useArea.value = p.prompt;
+      // highlight small animation
+      useArea.focus();
+      gsap.fromTo(useArea, {backgroundColor: 'rgba(255,255,255,0.02)'}, {backgroundColor: 'transparent', duration:0.8});
+    }
+
+    // Edit prompt: load into form
+    function editPrompt(id){
+      const prompts = loadPrompts();
+      const p = prompts.find(x=>x.id===id);
+      if(!p) return;
+      titleInput.value = p.title || '';
+      tagsInput.value = (p.tags || []).join(', ');
+      promptInput.value = p.prompt;
+      savePromptBtn.dataset.editing = id;
+      savePromptBtn.textContent = ' Update';
+      // Scroll into view on mobile
+      titleInput.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+
+    // Delete prompt
+    function deletePrompt(id){
+      if(!confirm('Delete this prompt?')) return;
+      let prompts = loadPrompts();
+      prompts = prompts.filter(p=>p.id !== id);
+      savePrompts(prompts);
+      renderList(searchInput.value);
+    }
+
+    // Share prompt by id -> create URL with base64 encoded prompt
+    function sharePromptById(id){
+      const prompts = loadPrompts();
+      const p = prompts.find(x=>x.id===id);
+      if(!p) return;
+      const data = {
+        title: p.title,
+        prompt: p.prompt,
+        tags: p.tags
+      };
+      // encode
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+      const url = `${location.origin}${location.pathname}#p=${encoded}`;
+      // copy to clipboard and show
+      navigator.clipboard.writeText(url).then(()=>{
+        alert('Share link copied to clipboard. Open it on any device to load the prompt.');
+      }, ()=> {
+        prompt('Copy this link:', url);
+      });
+    }
+
+    // On page load, check for share hash and auto-fill
+    function loadFromHash(){
+      if(location.hash && location.hash.startsWith('#p=')){
+        try{
+          const encoded = location.hash.slice(3);
+          const decoded = decodeURIComponent(escape(atob(encoded)));
+          const obj = JSON.parse(decoded);
+          // put into use area
+          useArea.value = obj.prompt || '';
+          // optionally prefill compose for saving
+          titleInput.value = obj.title || '';
+          tagsInput.value = (obj.tags || []).join(', ');
+          // animate
+          gsap.fromTo(useArea, {y:10, opacity:0}, {y:0, opacity:1, duration:0.6});
+        }catch(e){
+          console.warn('Failed to decode shared prompt', e);
+        }
+      }
+    }
+
+    // Copy area to clipboard
+    runCopyBtn.addEventListener('click', async ()=>{
+      const text = useArea.value;
+      if(!text) return alert('Nothing to copy.');
+      try{
+        await navigator.clipboard.writeText(text);
+        runCopyBtn.textContent = 'Copied ✓';
+        setTimeout(()=> runCopyBtn.textContent = 'Copy to clipboard', 1400);
+      }catch(e){
+        alert('Failed to copy. Select and copy manually.');
+      }
+    });
+
+    // Copy prompt from compose area
+    copyPromptBtn.addEventListener('click', async ()=>{
+      const text = promptInput.value;
+      if(!text) return alert('No prompt to copy.');
+      try{
+        await navigator.clipboard.writeText(text);
+        copyPromptBtn.textContent = 'Copied ✓';
+        setTimeout(()=> copyPromptBtn.textContent = ' Copy', 1200);
+      }catch(e){
+        alert('Copy failed.');
+      }
+    });
+
+    // Share the prompt currently in compose
+    sharePromptBtn.addEventListener('click', ()=>{
+      const prompt = promptInput.value.trim();
+      if(!prompt) return alert('No prompt to share.');
+      const data = { title: titleInput.value, prompt, tags: (tagsInput.value||'').split(',').map(s=>s.trim()).filter(Boolean) };
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+      const url = `${location.origin}${location.pathname}#p=${encoded}`;
+      // show url for copying
+      navigator.clipboard.writeText(url).then(()=> alert('Share link copied to clipboard.'), ()=> prompt('Copy this link:', url));
+    });
+
+    // Search
+    searchInput.addEventListener('input', e => {
+      renderList(e.target.value);
+    });
+    clearSearchBtn.addEventListener('click', ()=>{
+      searchInput.value = '';
+      renderList('');
+      searchInput.focus();
+    });
+
+    // Download all as JSON
+    downloadAllBtn.addEventListener('click', ()=>{
+      const prompts = loadPrompts();
+      const blob = new Blob([JSON.stringify(prompts, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'myprompt-backup.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    // Clear all local
+    clearAllBtn.addEventListener('click', ()=>{
+      if(!confirm('Clear all prompts from local storage? This cannot be undone.')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      renderList('');
+      updateStorageUsage();
+    });
+
+    // Import / Export via file input
+    importBtn.addEventListener('click', ()=> fileInput.click());
+    fileInput.addEventListener('change', (e)=>{
+      const f = e.target.files[0];
+      if(!f) return;
+      const reader = new FileReader();
+      reader.onload = (ev)=>{
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          if(!Array.isArray(parsed)) throw new Error('Expected an array of prompts');
+          // merge and dedupe by id
+          const existing = loadPrompts();
+          const merged = [...existing];
+          parsed.forEach(p => {
+            if(!p.id) p.id = uid();
+            merged.push(p);
+          });
+          savePrompts(merged);
+          renderList('');
+          alert('Import complete.');
+        } catch(err){
+          alert('Import failed: ' + err.message);
+        }
+      };
+      reader.readAsText(f);
+    });
+
+    // Export current prompts (same as download — quick export)
+    exportBtn.addEventListener('click', ()=>{
+      downloadAllBtn.click();
+    });
+
+    // Storage helper: show usage
+    updateStorageUsage();
+
+    // Theme toggle
+    themeToggle.addEventListener('click', ()=>{
+      const cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+      const next = cur === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('myprompt.theme', next);
+      updateThemeIcon(next);
+    });
+
+    // New prompt quick
+    newBtn.addEventListener('click', ()=>{
+      clearForm();
+      titleInput.focus();
+    });
+    quickCompose.addEventListener('click', ()=> titleInput.focus());
+    openLibrary.addEventListener('click', ()=> window.scrollTo({top:500, behavior:'smooth'}));
+
+    // Edit / delete action functions are above
+
+    // Delete prompt function uses confirm and re-render
+
+    // Share link open button: opens current hash if present
+    openShareURLBtn.addEventListener('click', ()=>{
+      if(location.hash && location.hash.startsWith('#p=')){
+        window.open(location.href, '_blank');
+      } else {
+        alert('No share link in URL. Use Share on a prompt to create one.');
+      }
+    });
+
+    // Accessibility: keyboard shortcut (N = new)
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'n' && (e.ctrlKey || e.metaKey)){
+        e.preventDefault();
+        newBtn.click();
+      }
+    });
+
+    // Initialise UI
+    initTheme();
+    renderList('');
+    loadFromHash();
+
+    // GSAP micro-animations to make it feel premium
+    gsap.from('#animLogo', {duration:0.9, y:-8, rotation:8, opacity:0, ease:'back.out(1.7)'});
+    gsap.from('.hero-left h2',{duration:1, y:12, opacity:0, delay:0.12});
+    gsap.from('.card',{duration:0.9, opacity:0, y:8, stagger:0.06});
+
+    // Replace lucide icons (ensure loaded)
+    if(window.lucide) lucide.replace();
+
+    // Make sure anchor share hash listens for new loads (so remote open works)
+    window.addEventListener('hashchange', loadFromHash);
+
+    // Optional: example data (only insert if empty)
+    (function addSeedDataIfEmpty(){
+      const existing = loadPrompts();
+      if(existing.length === 0){
+        const sample = [
+          {
+            id: uid(),
+            title: 'Product features from POV of a customer',
+            prompt: 'Write 5 concise features for a SaaS product that increase conversion. Target persona: product manager at a fintech startup. Tone: professional and persuasive.',
+            tags: ['product','marketing'],
+            createdAt: Date.now()-1000*60*60*24*3,
+            updatedAt: Date.now()
+          },
+          {
+            id: uid(),
+            title: 'Refactor SQL query explanation',
+            prompt: 'Explain the performance issues in this SQL query and suggest an optimized version. SQL: SELECT * FROM orders JOIN customers ON orders.customer_id = customers.id WHERE orders.total > 1000 ORDER BY orders.created_at DESC;',
+            tags: ['db','sql','engineering'],
+            createdAt: Date.now()-1000*60*60*24*2,
+            updatedAt: Date.now()
+          }
+        ];
+        savePrompts(sample);
+        renderList('');
+      }
+    })();
+
+    /***********************
+     * Optional extension:
+     * If you want remote syncing, connect to Firebase or your own API.
+     * See the backend instructions in the hosting guide below.
+     ***********************/
+  </script>
+
+  <!-- FOOTER SCRIPTS - ICONS RENDER -->
+  <script>
+    // Replace any feather/lucide placeholders after everything loads
+    if(window.lucide) lucide.replace();
+  </script>
+</body>
+</html>
